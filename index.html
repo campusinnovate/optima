@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="OPTIMA ERP - Dashboard dan CRM">
+  <title>OPTIMA ERP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="loginView" class="login-page">
+    <div class="hero"><div class="logo">OPTIMA</div><h1>One system.<br>Clear decisions.</h1><p>Kelola identitas, dashboard, dan hubungan pelanggan dalam satu ruang kerja terintegrasi.</p><div class="hero-tags"><span>SSO</span><span>Dashboard</span><span>CRM</span></div></div>
+    <div class="login-panel"><form id="loginForm" class="login-card"><div class="eyebrow">Enterprise Relationship System</div><h2>Masuk ke OPTIMA</h2><p class="muted">Gunakan akun Supabase Anda atau buka mode demo.</p><div id="loginAlert" class="alert hidden"></div><label>Email<input id="email" type="email" placeholder="nama@perusahaan.com" required></label><label>Password<input id="password" type="password" minlength="8" placeholder="Minimal 8 karakter" required></label><button class="button primary" type="submit">Masuk</button><button id="demoButton" class="button secondary" type="button">Buka Mode Demo</button><small>Mode demo menyimpan data hanya pada browser ini.</small></form></div>
+  </section>
+
+  <section id="appView" class="app hidden">
+    <aside class="sidebar"><div><div class="logo">OPTIMA</div><div class="sidebar-sub">Enterprise Relationship System</div></div><nav><button class="nav active" data-view="dashboard">Dashboard</button><button class="nav" data-view="leads">CRM Leads</button><button class="nav" data-view="followups">Follow-up Center</button></nav><div class="user-card"><div class="avatar" id="avatar">O</div><div><strong id="userName">Optima User</strong><small id="userRole">CRM Staff</small></div><button id="logoutButton" title="Keluar">↗</button></div></aside>
+    <main class="content">
+      <header><div><div class="eyebrow" id="pageEyebrow">Ringkasan Operasional</div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Pantau performa dan tindakan prioritas hari ini.</p></div><button id="addLeadButton" class="button primary">+ Tambah Lead</button></header>
+
+      <div id="dashboardView" class="view"><div class="stats"><article><span>Total Lead</span><strong id="totalLead">0</strong><em>Database aktif</em></article><article><span>Qualified</span><strong id="qualifiedLead">0</strong><em>Siap ditindaklanjuti</em></article><article><span>Client Aktif</span><strong id="activeClient">0</strong><em>Hasil konversi</em></article><article><span>Overdue</span><strong id="overdueCount" class="danger-text">0</strong><em>Perlu tindakan</em></article></div><div class="dashboard-grid"><article class="panel"><div class="panel-head"><div><span class="eyebrow">CRM</span><h3>Lead Terbaru</h3></div><button class="text-button" data-go="leads">Lihat semua</button></div><div id="recentLeads"></div></article><article class="panel"><div class="panel-head"><div><span class="eyebrow">Pipeline</span><h3>Komposisi Status</h3></div></div><div id="pipelineChart" class="pipeline"></div></article></div></div>
+
+      <div id="leadsView" class="view hidden"><div class="toolbar"><input id="searchLead" placeholder="Cari nama atau organisasi"><select id="statusFilter"><option value="">Semua status</option><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="nurturing">Nurturing</option><option value="converted">Converted</option><option value="unqualified">Unqualified</option></select></div><div class="table-wrap"><table><thead><tr><th>Lead</th><th>Organisasi</th><th>Status</th><th>Source</th><th>Follow-up</th><th>Aksi</th></tr></thead><tbody id="leadRows"></tbody></table></div></div>
+
+      <div id="followupsView" class="view hidden"><div class="table-wrap"><table><thead><tr><th>Lead</th><th>Aktivitas</th><th>Jatuh Tempo</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="followupRows"></tbody></table></div></div>
+    </main>
+  </section>
+
+  <dialog id="leadDialog"><form id="leadForm" method="dialog"><div class="modal-head"><div><div class="eyebrow">CRM</div><h2>Tambah Lead</h2></div><button class="icon-button" value="cancel">×</button></div><div class="form-grid"><label>Nama *<input name="name" required></label><label>Organisasi<input name="organization"></label><label>Email<input name="email" type="email"></label><label>Nomor telepon<input name="phone"></label><label>Source *<select name="source" required><option>Referral</option><option>LinkedIn</option><option>Event</option><option>Website</option><option>Instagram</option><option>Other</option></select></label><label>Status<select name="status"><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="nurturing">Nurturing</option></select></label><label class="full">Next follow-up<input name="followup" type="datetime-local"></label><label class="full">Catatan<textarea name="notes"></textarea></label></div><div class="modal-actions"><button class="button secondary" value="cancel">Batal</button><button class="button primary" value="default">Simpan Lead</button></div></form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
