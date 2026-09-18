@@ -23,9 +23,16 @@ jobs:
       - run: php artisan key:generate
       - run: npm install --ignore-scripts
       - run: npm run build
-      - run: php artisan test
+      - name: Run Laravel tests
+        run: php artisan test > storage/test-output.txt 2>&1
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: ':memory:'
           SESSION_DRIVER: array
           CACHE_STORE: array
+      - name: Upload test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: laravel-test-output
+          path: storage/test-output.txt
