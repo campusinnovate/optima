@@ -61,12 +61,16 @@ SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 
 Jika memakai Session pooler, salin host, port, dan user persis dari panel Connect karena region dan username pooler ditentukan Supabase. Jangan commit password database, access token, atau service-role key.
 
-## Google SSO
+## Google SSO (langsung melalui backend Laravel)
 
 1. Aktifkan provider Google pada **Supabase Authentication > Providers**.
-2. Tambahkan allowed redirect URL `http://localhost:8000/auth/callback`.
-3. Tambahkan URL staging dan production setelah domain tersedia.
-4. Simpan Google Client ID dan Client Secret di Supabase, bukan repository.
+2. Tambahkan **Redirect URL** `http://localhost:8000/auth/callback` di **Authentication > URL Configuration**. Untuk production, tambahkan `https://DOMAIN-ANDA/auth/callback` juga.
+3. Pada Google Cloud Console, gunakan callback yang ditampilkan oleh halaman provider Google di Supabase (umumnya `https://PROJECT_REF.supabase.co/auth/v1/callback`), bukan callback Laravel.
+4. Pastikan **Site URL** mengarah ke URL aplikasi yang aktif dan `APP_URL` di Laravel memakai URL yang sama.
+5. Isi `SUPABASE_URL` dan `SUPABASE_PUBLISHABLE_KEY` pada `.env`, lalu jalankan `php artisan config:clear`.
+6. Simpan Google Client ID dan Client Secret di Supabase, bukan repository.
+
+Alur ini menggunakan OAuth PKCE: Laravel membuat `state` dan verifier, menukar authorization code di server, lalu menyimpan token Supabase hanya di sesi Laravel. Token tidak dikirim melalui URL atau disimpan browser. Sesi akan diperbarui otomatis memakai refresh token sebelum kedaluwarsa.
 
 ## Role Awal
 

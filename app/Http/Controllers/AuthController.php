@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\UserProfile;
+use App\Services\SupabaseAuthService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use RuntimeException;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly SupabaseAuthService $supabase) {}
     public function showLogin(): View
     {
         return view('auth.login');
@@ -24,7 +27,7 @@ class AuthController extends Controller
         ]);
 
         try {
-            $response = $this->client()->post('/auth/v1/token?grant_type=password', $credentials);
+            $response = $this->supabase->passwordSignIn($credentials);
         } catch (ConnectionException) {
             return back()->withInput($request->only('email'))->withErrors(['email' => 'Layanan autentikasi tidak dapat dihubungi.']);
         }
@@ -38,40 +41,47 @@ class AuthController extends Controller
 
     public function google(): RedirectResponse
     {
-        $redirect = route('auth.callback');
-        $url = rtrim((string) config('services.supabase.url'), '/')
-            .'/auth/v1/authorize?provider=google&redirect_to='.urlencode($redirect);
+        $state = Str::random(64);
+        $codeVerifier = Str::random(96);
+        request()->session()->put('supabase_oauth', ['state' => $state, 'code_verifier' => $codeVerifier]);
+        $codeChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
+        try {
+            $url = $this->supabase->authorizationUrl(route('auth.callback'), $state, $codeChallenge);
+        } catch (RuntimeException) {
+            return redirect()->route('login')->withErrors(['email' => 'SSO belum dikonfigurasi. Hubungi administrator.']);
+        }
 
         return redirect()->away($url);
     }
 
-    public function callback(): View
+    public function callback(Request $request): RedirectResponse
     {
-        return view('auth.callback');
-    }
+        $oauth = $request->session()->pull('supabase_oauth', []);
+        $state = (string) $request->query('state');
+        $code = (string) $request->query('code');
 
-    public function storeSession(Request $request): RedirectResponse
-    {
-        $payload = $request->validate([
-            'access_token' => ['required', 'string'],
-            'refresh_token' => ['nullable', 'string'],
-            'expires_in' => ['nullable', 'integer'],
-        ]);
+        if (! $code || ! isset($oauth['state'], $oauth['code_verifier']) || ! hash_equals($oauth['state'], $state)) {
+            return redirect()->route('login')->withErrors(['email' => 'Permintaan SSO tidak valid atau sudah kedaluwarsa. Silakan coba lagi.']);
+        }
 
-        $userResponse = $this->client($payload['access_token'])->get('/auth/v1/user');
+        try {
+            $response = $this->supabase->exchangeCode($code, $oauth['code_verifier']);
+        } catch (ConnectionException) {
+            return redirect()->route('login')->withErrors(['email' => 'Layanan SSO tidak dapat dihubungi.']);
+        }
 
-        if ($userResponse->failed()) {
+        if ($response->failed()) {
             return redirect()->route('login')->withErrors(['email' => 'Sesi Google tidak dapat diverifikasi.']);
         }
 
-        return $this->establishSession($request, [...$payload, 'user' => $userResponse->json()]);
+        return $this->establishSession($request, $response->json());
     }
 
     public function logout(Request $request): RedirectResponse
     {
         $token = data_get($request->session()->get('optima_user'), 'access_token');
         if ($token) {
-            $this->client($token)->post('/auth/v1/logout');
+            $this->supabase->signOut($token);
         }
 
         $request->session()->invalidate();
@@ -106,17 +116,10 @@ class AuthController extends Controller
             'role' => $profile->role,
             'access_token' => $auth['access_token'] ?? null,
             'refresh_token' => $auth['refresh_token'] ?? null,
+            'expires_at' => now()->addSeconds((int) ($auth['expires_in'] ?? 3600))->timestamp,
         ]);
 
         return redirect()->intended(route('dashboard'));
     }
 
-    private function client(?string $bearer = null)
-    {
-        $client = Http::baseUrl(rtrim((string) config('services.supabase.url'), '/'))
-            ->acceptJson()
-            ->withHeader('apikey', (string) config('services.supabase.publishable_key'));
-
-        return $bearer ? $client->withToken($bearer) : $client;
-    }
 }

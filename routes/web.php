@@ -15,7 +15,6 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     Route::get('/auth/google', [AuthController::class, 'google'])->name('auth.google');
     Route::get('/auth/callback', [AuthController::class, 'callback'])->name('auth.callback');
-    Route::post('/auth/session', [AuthController::class, 'storeSession'])->name('auth.session');
 });
 
 Route::middleware('optima.auth')->group(function (): void {
